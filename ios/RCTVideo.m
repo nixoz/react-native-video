@@ -118,7 +118,7 @@ static NSString *const timedMetadata = @"timedMetadata";
     {
         return [playerItem seekableTimeRanges].firstObject.CMTimeRangeValue;
     }
-    
+
     return (kCMTimeRangeZero);
 }
 
@@ -299,6 +299,7 @@ static NSString *const timedMetadata = @"timedMetadata";
   bool isAsset = [RCTConvert BOOL:[source objectForKey:@"isAsset"]];
   NSString *uri = [source objectForKey:@"uri"];
   NSString *type = [source objectForKey:@"type"];
+  NSDictionary *headers = [source objectForKey:@"headers"];
 
   NSURL *url = (isNetwork || isAsset) ?
     [NSURL URLWithString:uri] :
@@ -306,7 +307,10 @@ static NSString *const timedMetadata = @"timedMetadata";
 
   if (isNetwork) {
     NSArray *cookies = [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies];
-    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:@{AVURLAssetHTTPCookiesKey : cookies}];
+    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:@{
+                                                                  AVURLAssetHTTPCookiesKey : cookies,
+                                                                  @"AVURLAssetHTTPHeaderFieldsKey" : headers
+                                                                }];
     return [AVPlayerItem playerItemWithAsset:asset];
   }
   else if (isAsset) {
@@ -325,23 +329,23 @@ static NSString *const timedMetadata = @"timedMetadata";
     if ([keyPath isEqualToString: timedMetadata])
     {
 
-        
+
         NSArray<AVMetadataItem *> *items = [change objectForKey:@"new"];
         if (items && ![items isEqual:[NSNull null]] && items.count > 0) {
-            
+
             NSMutableArray *array = [NSMutableArray new];
             for (AVMetadataItem *item in items) {
-                
+
                 NSString *value = item.value;
                 NSString *identifier = item.identifier;
-                
+
                 if (![value isEqual: [NSNull null]]) {
                     NSDictionary *dictionary = [[NSDictionary alloc] initWithObjects:@[value, identifier] forKeys:@[@"value", @"identifier"]];
-                    
+
                     [array addObject:dictionary];
                 }
             }
-            
+
             self.onTimedMetadata(@{
                                    @"target": self.reactTag,
                                    @"metadata": array
@@ -376,7 +380,7 @@ static NSString *const timedMetadata = @"timedMetadata";
           } else
             orientation = @"portrait";
         }
-          
+
       if(self.onVideoLoad) {
           self.onVideoLoad(@{@"duration": [NSNumber numberWithFloat:duration],
                              @"currentTime": [NSNumber numberWithFloat:CMTimeGetSeconds(_playerItem.currentTime)],

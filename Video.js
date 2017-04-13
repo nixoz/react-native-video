@@ -163,7 +163,7 @@ export default class Video extends Component {
     if (uri && uri.match(/^\//)) {
       uri = `file://${uri}`;
     }
-
+    const headers = source.headers || {};
     const isNetwork = !!(uri && uri.match(/^https?:/));
     const isAsset = !!(uri && uri.match(/^(assets-library|file|content|ms-appx|ms-appdata):/));
 
@@ -184,6 +184,7 @@ export default class Video extends Component {
       resizeMode: nativeResizeMode,
       src: {
         uri,
+        headers,
         isNetwork,
         isAsset,
         type: source.type || '',
@@ -264,7 +265,8 @@ Video.propTypes = {
   /* Wrapper component */
   source: PropTypes.oneOfType([
     PropTypes.shape({
-      uri: PropTypes.string
+      uri: PropTypes.string,
+      headers: PropTypes.object
     }),
     // Opaque type returned by require('./video.mp4')
     PropTypes.number
