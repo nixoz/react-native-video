@@ -43,6 +43,7 @@ static NSString *const timedMetadata = @"timedMetadata";
   BOOL _playbackStalled;
   BOOL _playInBackground;
   BOOL _playWhenInactive;
+  NSString * _ignoreSilentSwitch;
   NSString * _resizeMode;
   BOOL _fullscreenPlayerPresented;
   UIViewController * _presentingViewController;
@@ -66,6 +67,7 @@ static NSString *const timedMetadata = @"timedMetadata";
     _playerBufferEmpty = YES;
     _playInBackground = false;
     _playWhenInactive = false;
+    _ignoreSilentSwitch = @"inherit"; // inherit, ignore, obey
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(applicationWillResignActive:)
@@ -139,6 +141,7 @@ static NSString *const timedMetadata = @"timedMetadata";
 {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [self removePlayerItemObservers];
+  [self removePlayerLayer];
   [_player removeObserver:self forKeyPath:playbackRate context:nil];
 }
 
@@ -501,12 +504,23 @@ static NSString *const timedMetadata = @"timedMetadata";
   _playWhenInactive = playWhenInactive;
 }
 
+- (void)setIgnoreSilentSwitch:(NSString *)ignoreSilentSwitch
+{
+  _ignoreSilentSwitch = ignoreSilentSwitch;
+  [self applyModifiers];
+}
+
 - (void)setPaused:(BOOL)paused
 {
   if (paused) {
     [_player pause];
     [_player setRate:0.0];
   } else {
+    if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+    } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+    }
     [_player play];
     [_player setRate:_rate];
   }
